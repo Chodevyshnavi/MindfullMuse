@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Register - MindfulMuse{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-user-plus fa-3x text-primary mb-3"></i>
+                        <h2 class="fw-bold">Join MindfulMuse</h2>
+                        <p class="text-muted">Start your emotional wellness journey today</p>
+                    </div>
+
+                    <form id="registerForm">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                            <div class="form-text">Choose a unique username</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                            <div class="form-text">We'll never share your email with anyone</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" required minlength="6">
+                            <div class="form-text">Must be at least 6 characters long</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">Confirm Password</label>
+                            <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="agreeTerms" required>
+                            <label class="form-check-label" for="agreeTerms">
+                                I agree to the <a href="#" class="text-decoration-none">Terms of Service</a> and 
+                                <a href="#" class="text-decoration-none">Privacy Policy</a>
+                            </label>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-rocket me-2"></i>Create Account
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="text-center mt-4">
+                        <p class="text-muted">
+                            Already have an account? 
+                            <a href="{{ url_for('login') }}" class="text-decoration-none">Sign in here</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.getElementById('registerForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const password = formData.get('password');
+    const confirmPassword = formData.get('confirmPassword');
+    
+    if (password !== confirmPassword) {
+        showAlert('Passwords do not match', 'danger');
+        return;
+    }
+    
+    const registerData = {
+        username: formData.get('username'),
+        email: formData.get('email'),
+        password: password
+    };
+    
+    try {
+        const response = await fetch('/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(registerData)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showAlert('Registration successful! Please log in.', 'success');
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 2000);
+        } else {
+            showAlert(result.error || 'Registration failed', 'danger');
+        }
+    } catch (error) {
+        showAlert('An error occurred. Please try again.', 'danger');
+    }
+});
+
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    const form = document.getElementById('registerForm');
+    form.parentNode.insertBefore(alertDiv, form);
+    
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 5000);
+}
+</script>
+{% endblock %}

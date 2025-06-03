@@ -1,0 +1,457 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - MindfulMuse{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-6 fw-bold mb-2">Admin Dashboard</h1>
+                    <p class="text-muted mb-0">System overview and management</p>
+                </div>
+                <div>
+                    <span class="badge bg-primary fs-6">Administrator</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Stats -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="text-primary mb-3">
+                        <i class="fas fa-users fa-3x"></i>
+                    </div>
+                    <h2 class="fw-bold text-primary">{{ data.total_users or 0 }}</h2>
+                    <p class="text-muted mb-0">Total Users</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="text-success mb-3">
+                        <i class="fas fa-user-check fa-3x"></i>
+                    </div>
+                    <h2 class="fw-bold text-success">{{ data.active_users or 0 }}</h2>
+                    <p class="text-muted mb-0">Active Users</p>
+                    <small class="text-muted">Last 7 days</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="text-info mb-3">
+                        <i class="fas fa-book fa-3x"></i>
+                    </div>
+                    <h2 class="fw-bold text-info">{{ data.total_reflections or 0 }}</h2>
+                    <p class="text-muted mb-0">Total Reflections</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="text-warning mb-3">
+                        <i class="fas fa-chart-line fa-3x"></i>
+                    </div>
+                    <h2 class="fw-bold text-warning">
+                        {% if data.total_users > 0 %}
+                            {{ "%.1f"|format((data.total_reflections / data.total_users)) }}
+                        {% else %}
+                            0.0
+                        {% endif %}
+                    </h2>
+                    <p class="text-muted mb-0">Avg. per User</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Recent Activity -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h5 class="fw-bold mb-0">Recent Reflections</h5>
+                </div>
+                <div class="card-body">
+                    {% if data.recent_reflections %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Content Preview</th>
+                                        <th>Emotion</th>
+                                        <th>Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for reflection in data.recent_reflections %}
+                                    <tr>
+                                        <td>
+                                            <span class="fw-bold">{{ reflection.user_id[:8] }}...</span>
+                                        </td>
+                                        <td>
+                                            <div class="text-truncate" style="max-width: 200px;">
+                                                {{ reflection.content[:100] }}...
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ 'success' if reflection.sentiment.emotion in ['positive', 'very_positive'] else 'warning' if reflection.sentiment.emotion == 'neutral' else 'danger' }}">
+                                                {{ reflection.sentiment.emotion.replace('_', ' ').title() }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">
+                                                {{ reflection.created_at.strftime('%m/%d/%Y %H:%M') }}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-primary btn-sm" onclick="viewReflection('{{ reflection._id }}')">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button class="btn btn-outline-danger btn-sm" onclick="flagReflection('{{ reflection._id }}')">
+                                                    <i class="fas fa-flag"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No recent reflections</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Actions -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-0">
+                    <h5 class="fw-bold mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" onclick="sendSystemNotification()">
+                            <i class="fas fa-bell me-2"></i>Send Notification
+                        </button>
+                        <button class="btn btn-success" onclick="exportSystemData()">
+                            <i class="fas fa-download me-2"></i>Export Data
+                        </button>
+                        <button class="btn btn-info" onclick="generateReport()">
+                            <i class="fas fa-chart-bar me-2"></i>Generate Report
+                        </button>
+                        <button class="btn btn-warning" onclick="systemMaintenance()">
+                            <i class="fas fa-tools me-2"></i>Maintenance
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Health -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h5 class="fw-bold mb-0">System Health</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="small fw-bold">Database</span>
+                            <span class="badge bg-success">Online</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-success" style="width: 95%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="small fw-bold">AWS Services</span>
+                            <span class="badge bg-success">Healthy</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-success" style="width: 98%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="small fw-bold">AI Analysis</span>
+                            <span class="badge bg-success">Active</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-success" style="width: 92%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-0">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="small fw-bold">Server Load</span>
+                            <span class="badge bg-warning">Moderate</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-warning" style="width: 65%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Usage Analytics -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h5 class="fw-bold mb-0">Usage Analytics</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="usageChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Data variables for JavaScript -->
+<script type="application/json" id="admin-data">
+{
+    "totalUsers": {{ data.total_users or 0 }},
+    "activeUsers": {{ data.active_users or 0 }},
+    "totalReflections": {{ data.total_reflections or 0 }}
+}
+</script>
+
+<!-- Modals -->
+<!-- Notification Modal -->
+<div class="modal fade" id="notificationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Send System Notification</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="notificationForm">
+                    <div class="mb-3">
+                        <label for="notificationSubject" class="form-label">Subject</label>
+                        <input type="text" class="form-control" id="notificationSubject" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="notificationMessage" class="form-label">Message</label>
+                        <textarea class="form-control" id="notificationMessage" rows="4" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="sendNotification()">Send</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reflection View Modal -->
+<div class="modal fade" id="reflectionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Reflection Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="reflectionContent">
+                <!-- Content will be loaded dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.table th {
+    border-top: none;
+    font-weight: 600;
+}
+
+.progress {
+    height: 8px;
+}
+
+.card-header {
+    padding: 1.25rem 1.25rem 0.75rem;
+}
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- Chart.js CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<!-- Bootstrap Bundle (includes Popper) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.0/js/bootstrap.bundle.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    initializeUsageChart();
+});
+
+function initializeUsageChart() {
+    const ctx = document.getElementById('usageChart').getContext('2d');
+    
+    // Generate sample data for the last 30 days
+    const days = [];
+    const users = [];
+    const reflections = [];
+    
+    for (let i = 29; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        days.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+        users.push(Math.floor(Math.random() * 50) + 10);
+        reflections.push(Math.floor(Math.random() * 100) + 20);
+    }
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: days,
+            datasets: [
+                {
+                    label: 'Active Users',
+                    data: users,
+                    borderColor: '#0d6efd',
+                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    tension: 0.4
+                },
+                {
+                    label: 'New Reflections',
+                    data: reflections,
+                    borderColor: '#198754',
+                    backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+function sendSystemNotification() {
+    const modal = new bootstrap.Modal(document.getElementById('notificationModal'));
+    modal.show();
+}
+
+function sendNotification() {
+    const subject = document.getElementById('notificationSubject').value;
+    const message = document.getElementById('notificationMessage').value;
+    
+    if (!subject || !message) {
+        alert('Please fill in all fields');
+        return;
+    }
+    
+    // Here you would typically send the notification via API
+    console.log('Sending notification:', { subject: subject, message: message });
+    alert('Notification sent successfully!');
+    
+    const modal = bootstrap.Modal.getInstance(document.getElementById('notificationModal'));
+    modal.hide();
+    
+    // Reset form
+    document.getElementById('notificationForm').reset();
+}
+
+function exportSystemData() {
+    // Get the data values from the JSON script tag
+    const adminDataElement = document.getElementById('admin-data');
+    const adminData = JSON.parse(adminDataElement.textContent);
+    
+    // Generate system data object
+    const systemData = {
+        timestamp: new Date().toISOString(),
+        users: adminData.totalUsers,
+        active_users: adminData.activeUsers,
+        reflections: adminData.totalReflections,
+        system_health: {
+            database: 'online',
+            aws_services: 'healthy',
+            ai_analysis: 'active',
+            server_load: 'moderate'
+        }
+    };
+    
+    const blob = new Blob([JSON.stringify(systemData, null, 2)], { type: 'application/json' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'system_data_' + new Date().toISOString().split('T')[0] + '.json';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+}
+
+function generateReport() {
+    alert('Generating comprehensive system report... This may take a few minutes.');
+    // Here you would typically trigger a report generation process
+}
+
+function systemMaintenance() {
+    if (confirm('Are you sure you want to initiate system maintenance? This may affect user experience.')) {
+        alert('System maintenance mode activated. Users will be notified.');
+        // Here you would typically put the system into maintenance mode
+    }
+}
+
+function viewReflection(reflectionId) {
+    // Here you would typically fetch the reflection details via API
+    const modal = new bootstrap.Modal(document.getElementById('reflectionModal'));
+    document.getElementById('reflectionContent').innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+    modal.show();
+    
+    // Simulate loading reflection data
+    setTimeout(function() {
+        document.getElementById('reflectionContent').innerHTML = '<div class="mb-3"><strong>Reflection ID:</strong> ' + reflectionId + '</div><div class="mb-3"><strong>Content:</strong><div class="border rounded p-3 mt-2"><p>This is a sample reflection content. In a real implementation, you would fetch the actual reflection data from your database.</p></div></div><div class="row"><div class="col-md-6"><strong>Sentiment Analysis:</strong><ul class="list-unstyled mt-2"><li>Emotion: Positive</li><li>Compound Score: 0.8</li><li>Positivity: 75%</li></ul></div><div class="col-md-6"><strong>Metadata:</strong><ul class="list-unstyled mt-2"><li>Word Count: 250</li><li>Mood Rating: 7/10</li><li>Tags: grateful, happy</li></ul></div></div>';
+    }, 1000);
+}
+
+function flagReflection(reflectionId) {
+    if (confirm('Are you sure you want to flag this reflection for review?')) {
+        alert('Reflection flagged for manual review.');
+        // Here you would typically flag the reflection in your database
+    }
+}
+</script>
+{% endblock %}

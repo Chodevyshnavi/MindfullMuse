@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+
+{% block title %}Journal - MindfulMuse{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="text-center mb-5">
+                <h1 class="display-5 fw-bold mb-3">Express Yourself</h1>
+                <p class="lead text-muted">Share your thoughts, feelings, and experiences in a safe space</p>
+            </div>
+
+            <!-- Journal Form -->
+            <div class="card border-0 shadow">
+                <div class="card-body p-4">
+                    <form id="journalForm">
+                        <!-- Mood Rating -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">How are you feeling today?</label>
+                            <div class="mood-rating">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="text-muted">😢 Very Low</span>
+                                    <span class="text-muted">😊 Very High</span>
+                                </div>
+                                <input type="range" class="form-range" id="moodRating" name="mood_rating" min="1" max="10" value="5">
+                                <div class="text-center mt-2">
+                                    <span class="fw-bold fs-4" id="moodValue">5</span>
+                                    <span class="text-muted">/10</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Writing Prompt -->
+                        <div class="mb-4">
+                            <div class="card bg-light border-0">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="fw-bold mb-0">💡 Writing Prompt</h6>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="getNewPrompt()">
+                                            <i class="fas fa-sync-alt me-1"></i>New Prompt
+                                        </button>
+                                    </div>
+                                    <p id="writingPrompt" class="mb-0 text-muted">Loading prompt...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Journal Content -->
+                        <div class="mb-4">
+                            <label for="journalContent" class="form-label fw-bold">Your Reflection</label>
+                            <textarea class="form-control" id="journalContent" name="content" rows="12" 
+                                placeholder="What's on your mind today? How are you feeling? What experiences shaped your day?"></textarea>
+                            <div class="form-text">
+                                <span id="wordCount">0</span> words
+                            </div>
+                        </div>
+
+                        <!-- Tags -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Tags (optional)</label>
+                            <div class="mb-2">
+                                <span class="badge bg-secondary me-1 cursor-pointer" onclick="toggleTag('grateful')">grateful</span>
+                                <span class="badge bg-secondary me-1 cursor-pointer" onclick="toggleTag('anxious')">anxious</span>
+                                <span class="badge bg-secondary me-1 cursor-pointer" onclick="toggleTag('happy')">happy</span>
+                                <span class="badge bg-secondary me-1 cursor-pointer" onclick="toggleTag('sad')">sad</span>
+                                <span class="badge bg-secondary me-1 cursor-pointer" onclick="toggleTag('excited')">excited</span>
+                                <span class="badge bg-secondary me-1 cursor-pointer" onclick="toggleTag('stressed')">stressed</span>
+                                <span class="badge bg-secondary me-1 cursor-pointer" onclick="toggleTag('peaceful')">peaceful</span>
+                                <span class="badge bg-secondary me-1 cursor-pointer" onclick="toggleTag('confused')">confused</span>
+                            </div>
+                            <input type="text" class="form-control" id="customTag" placeholder="Add custom tag and press Enter">
+                            <div id="selectedTags" class="mt-2"></div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-save me-2"></i>Save Reflection
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Tips Card -->
+            <div class="card border-0 bg-light mt-4">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3">💡 Writing Tips</h6>
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Write freely without worrying about grammar or structure</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Be honest about your feelings and experiences</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Include both positive and challenging moments</li>
+                        <li class="mb-0"><i class="fas fa-check text-success me-2"></i>Take your time - there's no rush</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Reflection Saved!</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="fas fa-check-circle fa-3x text-success"></i>
+                </div>
+                <p class="text-center">Your reflection has been saved successfully!</p>
+                <div id="sentimentResults" class="card bg-light">
+                    <div class="card-body">
+                        <h6 class="fw-bold">AI Analysis</h6>
+                        <div id="sentimentContent"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-primary">View Dashboard</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.badge.active {
+    background-color: #0d6efd !important;
+}
+
+.mood-rating {
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-radius: 0.5rem;
+}
+
+.form-range::-webkit-slider-thumb {
+    background-color: #0d6efd;
+}
+
+.form-range::-moz-range-thumb {
+    background-color: #0d6efd;
+}
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let selectedTags = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Load initial prompt
+    getNewPrompt();
+    
+    // Mood rating slider
+    const moodSlider = document.getElementById('moodRating');
+    const moodValue = document.getElementById('moodValue');
+    
+    moodSlider.addEventListener('input', function() {
+        moodValue.textContent = this.value;
+    });
+    
+    // Word count
+    const textarea = document.getElementById('journalContent');
+    const wordCount = document.getElementById('wordCount');
+    
+    textarea.addEventListener('input', function() {
+        const words = this.value.trim().split(/\s+/).filter(word => word.length > 0);
+        wordCount.textContent = words.length;
+    });
+    
+    // Custom tag input
+    const customTagInput = document.getElementById('customTag');
+    customTagInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && this.value.trim()) {
+            e.preventDefault();
+            addTag(this.value.trim());
+            this.value = '';
+        }
+    });
+    
+    // Form submission
+    document.getElementById('journalForm').addEventListener('submit', handleSubmit);
+});
+
+async function getNewPrompt() {
+    try {
+        const response = await fetch('/api/prompts');
+        const data = await response.json();
+        document.getElementById('writingPrompt').textContent = data.prompt;
+    } catch (error) {
+        document.getElementById('writingPrompt').textContent = 'What emotions did you experience today?';
+    }
+}
+
+function toggleTag(tag) {
+    const index = selectedTags.indexOf(tag);
+    if (index > -1) {
+        selectedTags.splice(index, 1);
+    } else {
+        selectedTags.push(tag);
+    }
+    updateSelectedTags();
+    updateTagBadges();
+}
+
+function addTag(tag) {
+    if (!selectedTags.includes(tag)) {
+        selectedTags.push(tag);
+        updateSelectedTags();
+    }
+}
+
+function removeTag(tag) {
+    const index = selectedTags.indexOf(tag);
+    if (index > -1) {
+        selectedTags.splice(index, 1);
+        updateSelectedTags();
+        updateTagBadges();
+    }
+}
+
+function updateSelectedTags() {
+    const container = document.getElementById('selectedTags');
+    container.innerHTML = selectedTags.map(tag => 
+        `<span class="badge bg-primary me-1 mb-1">
+            ${tag} 
+            <i class="fas fa-times ms-1 cursor-pointer" onclick="removeTag('${tag}')"></i>
+        </span>`
+    ).join('');
+}
+
+function updateTagBadges() {
+    document.querySelectorAll('.badge.cursor-pointer').forEach(badge => {
+        const tag = badge.textContent.trim();
+        if (selectedTags.includes(tag)) {
+            badge.classList.add('bg-primary');
+            badge.classList.remove('bg-secondary');
+        } else {
+            badge.classList.add('bg-secondary');
+            badge.classList.remove('bg-primary');
+        }
+    });
+}
+
+async function handleSubmit(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const journalData = {
+        content: formData.get('content'),
+        mood_rating: parseInt(formData.get('mood_rating')),
+        tags: selectedTags
+    };
+    
+    if (!journalData.content.trim()) {
+        alert('Please write something before saving your reflection.');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/journal', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(journalData)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            // Show success modal with sentiment analysis
+            showSuccessModal(result);
+        } else {
+            alert(result.error || 'Failed to save reflection');
+        }
+    } catch (error) {
+        alert('An error occurred. Please try again.');
+    }
+}
+
+function showSuccessModal(result) {
+    const sentimentContent = document.getElementById('sentimentContent');
+    const emotion = result.sentiment.emotion.replace('_', ' ');
+    const positivity = Math.round(result.sentiment.positive * 100);
+    const streak = result.streak;
+    
+    sentimentContent.innerHTML = `
+        <p><strong>Emotional Tone:</strong> ${emotion.charAt(0).toUpperCase() + emotion.slice(1)}</p>
+        <p><strong>Positivity:</strong> ${positivity}%</p>
+        <p><strong>Streak:</strong> ${streak} days</p>
+        ${streak > 0 ? `<div class="alert alert-success small mb-0">🔥 Keep up the great work!</div>` : ''}
+    `;
+    
+    const modal = new bootstrap.Modal(document.getElementById('successModal'));
+    modal.show();
+    
+    // Reset form
+    document.getElementById('journalForm').reset();
+    selectedTags = [];
+    updateSelectedTags();
+    updateTagBadges();
+    document.getElementById('moodValue').textContent = '5';
+    document.getElementById('wordCount').textContent = '0';
+}
+</script>
+{% endblock %}

@@ -1,0 +1,294 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - MindfulMuse{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Welcome Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="bg-gradient-primary text-white rounded-3 p-4">
+                <h1 class="display-6 fw-bold mb-2">Welcome back, {{ session.username }}!</h1>
+                <p class="lead mb-0">Continue your emotional wellness journey</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="text-primary mb-2">
+                        <i class="fas fa-calendar-check fa-2x"></i>
+                    </div>
+                    <h3 class="fw-bold text-primary">{{ insights.streak or 0 }}</h3>
+                    <p class="text-muted mb-0">Day Streak</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="text-success mb-2">
+                        <i class="fas fa-book fa-2x"></i>
+                    </div>
+                    <h3 class="fw-bold text-success">{{ insights.total_entries or 0 }}</h3>
+                    <p class="text-muted mb-0">Total Entries</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="text-info mb-2">
+                        <i class="fas fa-smile fa-2x"></i>
+                    </div>
+                    <h3 class="fw-bold text-info">
+                        {% if insights.average_sentiment %}
+                            {{ "%.1f"|format(insights.average_sentiment * 100) }}%
+                        {% else %}
+                            --
+                        {% endif %}
+                    </h3>
+                    <p class="text-muted mb-0">Positivity</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="text-warning mb-2">
+                        <i class="fas fa-heart fa-2x"></i>
+                    </div>
+                    <h3 class="fw-bold text-warning text-capitalize">
+                        {{ insights.dominant_emotion or 'Neutral' }}
+                    </h3>
+                    <p class="text-muted mb-0">Dominant Mood</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Quick Actions -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-0 pb-0">
+                    <h5 class="fw-bold mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <a href="{{ url_for('journal') }}" class="text-decoration-none">
+                                <div class="card bg-primary text-white h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-pen fa-2x mb-3"></i>
+                                        <h6 class="fw-bold">New Journal Entry</h6>
+                                        <p class="small mb-0">Share your thoughts and feelings</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <a href="{{ url_for('analytics') }}" class="text-decoration-none">
+                                <div class="card bg-success text-white h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-chart-line fa-2x mb-3"></i>
+                                        <h6 class="fw-bold">View Analytics</h6>
+                                        <p class="small mb-0">Track your emotional patterns</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card bg-info text-white h-100 cursor-pointer" onclick="getPrompt()">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-lightbulb fa-2x mb-3"></i>
+                                    <h6 class="fw-bold">Get Prompt</h6>
+                                    <p class="small mb-0">Need inspiration? Get a writing prompt</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card bg-warning text-white h-100 cursor-pointer" onclick="exportData()">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-download fa-2x mb-3"></i>
+                                    <h6 class="fw-bold">Export Data</h6>
+                                    <p class="small mb-0">Download your journal entries</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Emotional Trend -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-0 pb-0">
+                    <h5 class="fw-bold mb-0">Emotional Trend</h5>
+                </div>
+                <div class="card-body">
+                    {% if insights.trend %}
+                        <div class="text-center">
+                            {% if insights.trend == 'improving' %}
+                                <i class="fas fa-arrow-up fa-3x text-success mb-3"></i>
+                                <h6 class="text-success fw-bold">Improving</h6>
+                                <p class="text-muted small">Your emotional wellness is trending upward!</p>
+                            {% else %}
+                                <i class="fas fa-minus fa-3x text-info mb-3"></i>
+                                <h6 class="text-info fw-bold">Stable</h6>
+                                <p class="text-muted small">Your emotional state is consistent.</p>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted">
+                            <i class="fas fa-chart-line fa-3x mb-3"></i>
+                            <p>Start journaling to see your emotional trends</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Reflections -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="fw-bold mb-0">Recent Reflections</h5>
+                        <a href="{{ url_for('journal') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-plus me-1"></i>Add New
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if reflections %}
+                        <div class="row g-3">
+                            {% for reflection in reflections %}
+                                <div class="col-md-6">
+                                    <div class="card border-0 bg-light">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <small class="text-muted">
+                                                    {{ reflection.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+                                                </small>
+                                                <span class="badge bg-{{ 'success' if reflection.sentiment.emotion in ['positive', 'very_positive'] else 'warning' if reflection.sentiment.emotion == 'neutral' else 'danger' }}">
+                                                    {{ reflection.sentiment.emotion.replace('_', ' ').title() }}
+                                                </span>
+                                            </div>
+                                            <p class="card-text">
+                                                {{ reflection.content[:150] }}
+                                                {% if reflection.content|length > 150 %}...{% endif %}
+                                            </p>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-heart me-1"></i>Mood: {{ reflection.mood_rating }}/10
+                                                </small>
+                                                <small class="text-muted">
+                                                    {{ reflection.word_count }} words
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-book-open fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No reflections yet</h5>
+                            <p class="text-muted">Start your wellness journey by writing your first reflection</p>
+                            <a href="{{ url_for('journal') }}" class="btn btn-primary">
+                                <i class="fas fa-pen me-2"></i>Start Writing
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Prompt Modal -->
+<div class="modal fade" id="promptModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Writing Prompt</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="promptText" class="lead"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="{{ url_for('journal') }}" class="btn btn-primary">Start Writing</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    transition: transform 0.2s ease-in-out;
+}
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+async function getPrompt() {
+    try {
+        const response = await fetch('/api/prompts');
+        const data = await response.json();
+        
+        document.getElementById('promptText').textContent = data.prompt;
+        const modal = new bootstrap.Modal(document.getElementById('promptModal'));
+        modal.show();
+    } catch (error) {
+        console.error('Error fetching prompt:', error);
+        alert('Unable to fetch prompt. Please try again.');
+    }
+}
+
+async function exportData() {
+    try {
+        const response = await fetch('/api/export');
+        const data = await response.json();
+        
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'mindful_muse_reflections_' + new Date().toISOString().split('T')[0] + '.json';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+    } catch (error) {
+        console.error('Error exporting data:', error);
+        alert('Unable to export data. Please try again.');
+    }
+}
+</script>
+{% endblock %}

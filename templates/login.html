@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Login - MindfulMuse{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-heart fa-3x text-primary mb-3"></i>
+                        <h2 class="fw-bold">Welcome Back</h2>
+                        <p class="text-muted">Continue your wellness journey</p>
+                    </div>
+
+                    <form id="loginForm">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="rememberMe">
+                            <label class="form-check-label" for="rememberMe">
+                                Remember me
+                            </label>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="text-center mt-4">
+                        <p class="text-muted">
+                            Don't have an account? 
+                            <a href="{{ url_for('register') }}" class="text-decoration-none">Sign up here</a>
+                        </p>
+                        <a href="#" class="text-muted small">Forgot your password?</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const loginData = {
+        username: formData.get('username'),
+        password: formData.get('password')
+    };
+    
+    try {
+        const response = await fetch('/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(loginData)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showAlert('Login successful! Redirecting...', 'success');
+            setTimeout(() => {
+                window.location.href = '/dashboard';
+            }, 1000);
+        } else {
+            showAlert(result.error || 'Login failed', 'danger');
+        }
+    } catch (error) {
+        showAlert('An error occurred. Please try again.', 'danger');
+    }
+});
+
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    const form = document.getElementById('loginForm');
+    form.parentNode.insertBefore(alertDiv, form);
+    
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 5000);
+}
+</script>
+{% endblock %}
