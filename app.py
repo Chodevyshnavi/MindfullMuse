@@ -17,8 +17,7 @@ import uuid
 import openai
 import anthropic
 import google.generativeai as genai
-from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM
-
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import re
 import random
 
