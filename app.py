@@ -16,8 +16,7 @@ from collections import defaultdict
 import uuid
 import openai
 import anthropic
-import google
-import google.generativeai as genai
+
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 model_name = "distilbert-base-uncased"  # Light and fast
 tokenizer = AutoTokenizer.from_pretrained(model_name)
