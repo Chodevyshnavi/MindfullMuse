@@ -18,7 +18,7 @@ import openai
 import anthropic
 import google.generativeai as genai
 from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM
-import torch
+
 import re
 import random
 
