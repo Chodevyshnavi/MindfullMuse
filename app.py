@@ -17,12 +17,8 @@ import uuid
 import openai
 import anthropic
 import google.generativeai as genai
+from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM
 import torch
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
-model_name = "distilbert-base-uncased"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForSequenceClassification.from_pretrained(model_name)
-
 import re
 import random
 
@@ -1217,4 +1213,4 @@ def trigger_bulk_insights():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(debug=True)
