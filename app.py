@@ -19,7 +19,7 @@ import anthropic
 import google-generativeai as genai
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
-model_name = "distilbert-base-uncased"  # Light and fast
+model_name = "distilbert-base-uncased"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForSequenceClassification.from_pretrained(model_name)
 
